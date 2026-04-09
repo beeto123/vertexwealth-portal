@@ -35,8 +35,8 @@ function generateCode() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-// Send email receipt
-async function sendEmailReceipt(investorEmail, investorName, type, amount, status, planType = null) {
+// Send email receipt (background - no await)
+function sendEmailReceipt(investorEmail, investorName, type, amount, status, planType = null) {
   let subject = '';
   let message = '';
 
@@ -61,13 +61,8 @@ async function sendEmailReceipt(investorEmail, investorName, type, amount, statu
     text: message
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error('Email error:', error);
-    return false;
-  }
+  // Send in background - don't wait
+  transporter.sendMail(mailOptions).catch(error => console.error('Email error:', error));
 }
 
 // ============ INVESTOR API ============
@@ -86,19 +81,23 @@ app.post('/api/generate-code', (req, res) => {
       if (depositAmount > 0) {
         db.run('INSERT INTO transactions (investor_code, investor_name, type, amount, status) VALUES (?, ?, ?, ?, ?)',
           [code, name, 'deposit', depositAmount, 'approved']);
+        // Send email in background
         sendEmailReceipt(email, name, 'deposit', depositAmount, 'approved');
       }
 
+      // Send login code email in background (don't wait)
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
         subject: 'Vertex Wealth Group - Your Login Code',
-        text: `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://yourdomain.com/login.html\n\nKeep this code private.\n\nThank you for investing with Vertex Wealth Group.`
+        text: `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://vertexwealth-portal.onrender.com/login.html\n\nKeep this code private.\n\nThank you for investing with Vertex Wealth Group.`
       };
 
-      transporter.sendMail(mailOptions, (error) => {
-        res.json({ success: true, code, emailSent: !error });
-      });
+      // Send email in background
+      transporter.sendMail(mailOptions).catch(error => console.error('Email error:', error));
+
+      // Return immediately - don't wait for email
+      res.json({ success: true, code });
     }
   );
 });
@@ -139,15 +138,15 @@ app.get('/api/dashboard', (req, res) => {
 // Select investment plan
 app.post('/api/investor/select-plan', (req, res) => {
   if (!req.session.investor) return res.json({ success: false, error: 'Not logged in' });
-  const { plan } = req.body; // 'daily' or 'weekly'
+  const { plan } = req.body;
   const code = req.session.investor.unique_code;
   const startDate = new Date();
   let endDate = new Date();
 
   if (plan === 'daily') {
-    endDate.setDate(endDate.getDate() + 30); // 30 days
+    endDate.setDate(endDate.getDate() + 30);
   } else if (plan === 'weekly') {
-    endDate.setDate(endDate.getDate() + 30); // 30 days
+    endDate.setDate(endDate.getDate() + 30);
   } else {
     return res.json({ success: false, error: 'Invalid plan' });
   }
@@ -282,11 +281,9 @@ app.post('/api/admin/process-auto-roi', (req, res) => {
       let planType = '';
       
       if (investor.active_plan === 'daily') {
-        // 5% per day
         roiToAdd = investor.balance * 0.05;
         planType = '5% Daily';
       } else if (investor.active_plan === 'weekly') {
-        // 35% per week (5% per day for 7 days)
         if (daysSinceStart >= 7 && daysSinceStart % 7 === 0) {
           roiToAdd = investor.balance * 0.35;
           planType = '35% Weekly';
@@ -365,7 +362,7 @@ app.post('/api/admin/update-wallet', (req, res) => {
   res.json({ success: true, wallet: centralWallet });
 });
 
-// Delete investor
+// Delete investor (FIXED)
 app.post('/api/admin/delete-investor', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { investor_code } = req.body;
