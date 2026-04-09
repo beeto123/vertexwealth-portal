@@ -358,6 +358,46 @@ app.get('/api/central-wallet', (req, res) => {
   res.json({ wallet: centralWallet });
 });
 
+// Submit lead (public contact form)
+app.post('/api/submit-lead', (req, res) => {
+  const { name, email, phone, amount, source, message } = req.body;
+  
+  // Send email to admin
+  const adminEmail = process.env.EMAIL_USER;
+  const subject = `New Investor Lead: ${name}`;
+  const emailBody = `
+New investor application:
+
+Name: ${name}
+Email: ${email}
+Phone: ${phone || 'Not provided'}
+Investment Amount: ${amount}
+Source: ${source}
+Message: ${message || 'No message'}
+
+Please review and contact the applicant.
+  `;
+  
+  sendEmail(adminEmail, subject, emailBody);
+  
+  // Also send confirmation to the applicant
+  const confirmBody = `Hello ${name},
+
+Thank you for your interest in Vertex Wealth Group.
+
+We have received your application and will review it within 24-48 hours. A representative will contact you at ${email} to discuss next steps.
+
+If you have any questions, please reply to this email.
+
+Thank you,
+Vertex Wealth Group`;
+  
+  sendEmail(email, 'Thank you for your application - Vertex Wealth Group', confirmBody);
+  
+  res.json({ success: true });
+});
+
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
