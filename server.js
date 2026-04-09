@@ -322,12 +322,42 @@ app.get('/api/central-wallet', (req, res) => {
   res.json({ wallet: centralWallet });
 });
 
-app.post('/api/submit-lead', (req, res) => {
+app.post('/api/submit-lead', async (req, res) => {
   const { name, email, phone, amount, source, message } = req.body;
+  
+  console.log('Lead received:', email);
+  
   const adminEmail = process.env.EMAIL_USER;
   const emailBody = `New investor application:\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nInvestment Amount: ${amount}\nSource: ${source}\nMessage: ${message || 'No message'}`;
-  sendEmail(adminEmail, `New Investor Lead: ${name}`, emailBody);
-  sendEmail(email, 'Thank you for your application - Vertex Wealth Group', `Hello ${name},\n\nWe have received your application and will review it within 24-48 hours.\n\nThank you,\nVertex Wealth Group`);
+  
+  // Send to admin
+  try {
+    await sgMail.send({
+      to: adminEmail,
+      from: process.env.EMAIL_USER,
+      subject: `New Investor Lead: ${name}`,
+      text: emailBody
+    });
+    console.log('Admin email sent to:', adminEmail);
+  } catch (err) {
+    console.error('Admin email error:', err.response?.body || err.message);
+  }
+  
+  // Send confirmation to applicant
+  const confirmBody = `Hello ${name},\n\nThank you for your interest in Vertex Wealth Group.\n\nWe have received your application and will review it within 24-48 hours.\n\nThank you,\nVertex Wealth Group`;
+  
+  try {
+    await sgMail.send({
+      to: email,
+      from: process.env.EMAIL_USER,
+      subject: 'Thank you for your application - Vertex Wealth Group',
+      text: confirmBody
+    });
+    console.log('Confirmation email sent to:', email);
+  } catch (err) {
+    console.error('Confirmation email error:', err.response?.body || err.message);
+  }
+  
   res.json({ success: true });
 });
 
