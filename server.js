@@ -362,6 +362,8 @@ app.get('/api/central-wallet', (req, res) => {
 app.post('/api/submit-lead', (req, res) => {
   const { name, email, phone, amount, source, message } = req.body;
   
+  console.log('Lead received:', name, email);
+  
   // Send email to admin
   const adminEmail = process.env.EMAIL_USER;
   const subject = `New Investor Lead: ${name}`;
@@ -378,9 +380,10 @@ Message: ${message || 'No message'}
 Please review and contact the applicant.
   `;
   
+  // Send to admin
   sendEmail(adminEmail, subject, emailBody);
   
-  // Also send confirmation to the applicant
+  // Send confirmation to applicant
   const confirmBody = `Hello ${name},
 
 Thank you for your interest in Vertex Wealth Group.
