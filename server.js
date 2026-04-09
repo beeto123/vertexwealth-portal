@@ -2,9 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
-const nodemailer = require('nodemailer');
 const db = require('./database');
-const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,16 +17,9 @@ app.use(session({
   cookie: { secure: false }
 }));
 
-// Email transporter - Gmail with longer timeout
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  timeout: 60000,
-  socketTimeout: 60000
-});
+// SendGrid setup
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Central wallet address
 let centralWallet = "TXvYkLxZqWnRfHjKpLmNpQrStUvWxYz12345678";
@@ -37,34 +28,39 @@ function generateCode() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-// Send email receipt (background - no waiting)
+// Send email using SendGrid (background)
+function sendEmail(to, subject, text) {
+  const msg = {
+    to: to,
+    from: process.env.EMAIL_USER,
+    subject: subject,
+    text: text
+  };
+  
+  sgMail.send(msg).catch(error => {
+    console.error('SendGrid error:', error.response?.body || error.message);
+  });
+}
+
 function sendEmailReceipt(investorEmail, investorName, type, amount, status, planType = null) {
   let subject = '';
   let message = '';
 
   if (type === 'deposit') {
     subject = `Deposit Confirmed - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\nYour deposit of $${amount} has been confirmed and added to your balance.\n\nCurrent balance has been updated.\n\nThank you for investing with Vertex Wealth Group.`;
+    message = `Hello ${investorName},\n\nYour deposit of $${amount} has been confirmed and added to your balance.\n\nThank you for investing with Vertex Wealth Group.`;
   } else if (type === 'roi') {
     subject = `ROI Added to Your Account - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\n${planType ? `${planType} plan` : 'Profit'} of $${amount} has been added to your balance.\n\nTotal ROI earned has been updated.\n\nThank you for trusting Vertex Wealth Group.`;
+    message = `Hello ${investorName},\n\n${planType ? `${planType} plan` : 'Profit'} of $${amount} has been added to your balance.\n\nThank you for trusting Vertex Wealth Group.`;
   } else if (type === 'withdraw_approved') {
     subject = `Withdrawal Approved - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been approved and processed.\n\nFunds have been sent to your USDT wallet.\n\nThank you.`;
+    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been approved and processed.\n\nFunds have been sent to your USDT wallet.`;
   } else if (type === 'withdraw_rejected') {
     subject = `Withdrawal Update - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been reviewed.\n\nStatus: ${status}\n\nIf you have questions, please contact support.`;
+    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been rejected.\n\nReason: ${status}\n\nPlease contact support.`;
   }
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: investorEmail,
-    subject: subject,
-    text: message
-  };
-
-  // Send in background - don't wait
-  transporter.sendMail(mailOptions).catch(error => console.error('Email error:', error));
+  sendEmail(investorEmail, subject, message);
 }
 
 // ============ INVESTOR API ============
@@ -86,22 +82,18 @@ app.post('/api/generate-code', (req, res) => {
         sendEmailReceipt(email, name, 'deposit', depositAmount, 'approved');
       }
 
-      // Send login code email in background (don't wait)
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Vertex Wealth Group - Your Login Code',
-        text: `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://vertexwealth-portal.onrender.com/login.html\n\nKeep this code private.\n\nThank you for investing with Vertex Wealth Group.`
-      };
+      // Send login code email
+      const message = `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://vertexwealth-portal.onrender.com/login.html\n\nKeep this code private.\n\nThank you for investing with Vertex Wealth Group.`;
+      
+      sendEmail(email, 'Vertex Wealth Group - Your Login Code', message);
 
-      // Send email in background - no waiting
-      transporter.sendMail(mailOptions).catch(error => console.error('Email error:', error));
-
-      // Return immediately
       res.json({ success: true, code });
     }
   );
 });
+
+// [The rest of your server.js remains exactly the same - all other endpoints]
+// (Keep your existing admin endpoints, withdrawal handling, etc.)
 
 app.post('/api/login', (req, res) => {
   const { code } = req.body;
@@ -112,7 +104,6 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// Get dashboard data
 app.get('/api/dashboard', (req, res) => {
   if (!req.session.investor) return res.json({ success: false, error: 'Not logged in' });
   const code = req.session.investor.unique_code;
@@ -136,7 +127,6 @@ app.get('/api/dashboard', (req, res) => {
   });
 });
 
-// Select investment plan
 app.post('/api/investor/select-plan', (req, res) => {
   if (!req.session.investor) return res.json({ success: false, error: 'Not logged in' });
   const { plan } = req.body;
@@ -159,7 +149,6 @@ app.post('/api/investor/select-plan', (req, res) => {
     });
 });
 
-// Get chart data for investor
 app.get('/api/investor/chart-data', (req, res) => {
   if (!req.session.investor) return res.json({ success: false, error: 'Not logged in' });
   const code = req.session.investor.unique_code;
@@ -181,7 +170,6 @@ app.get('/api/investor/chart-data', (req, res) => {
   });
 });
 
-// Request withdrawal
 app.post('/api/withdraw', (req, res) => {
   if (!req.session.investor) return res.json({ success: false, error: 'Not logged in' });
   const { amount, wallet_address } = req.body;
@@ -233,7 +221,6 @@ app.get('/api/admin/investors', (req, res) => {
   });
 });
 
-// Add deposit
 app.post('/api/admin/add-deposit', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { investor_code, investor_name, amount, investor_email } = req.body;
@@ -246,7 +233,6 @@ app.post('/api/admin/add-deposit', (req, res) => {
   res.json({ success: true });
 });
 
-// Add ROI
 app.post('/api/admin/add-roi', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { investor_code, investor_name, amount, investor_email, plan_type } = req.body;
@@ -265,7 +251,6 @@ app.post('/api/admin/add-roi', (req, res) => {
   });
 });
 
-// Auto process ROI for all investors on active plans
 app.post('/api/admin/process-auto-roi', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   
@@ -308,7 +293,6 @@ app.post('/api/admin/process-auto-roi', (req, res) => {
   });
 });
 
-// Get pending withdrawals
 app.get('/api/admin/withdrawals', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   db.all(`SELECT t.*, i.email FROM transactions t JOIN investors i ON t.investor_code = i.unique_code WHERE t.type = 'withdraw' AND t.status = 'pending' ORDER BY t.created_at DESC`, [], (err, withdrawals) => {
@@ -317,7 +301,6 @@ app.get('/api/admin/withdrawals', (req, res) => {
   });
 });
 
-// Approve withdrawal
 app.post('/api/admin/approve-withdrawal', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { transaction_id, investor_code, amount, investor_email, investor_name } = req.body;
@@ -328,7 +311,6 @@ app.post('/api/admin/approve-withdrawal', (req, res) => {
   res.json({ success: true });
 });
 
-// Reject withdrawal
 app.post('/api/admin/reject-withdrawal', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { transaction_id, reason, investor_email, investor_name, amount } = req.body;
@@ -338,7 +320,6 @@ app.post('/api/admin/reject-withdrawal', (req, res) => {
   res.json({ success: true });
 });
 
-// Get all transactions
 app.get('/api/admin/transactions', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   db.all('SELECT * FROM transactions ORDER BY created_at DESC', [], (err, transactions) => {
@@ -347,7 +328,6 @@ app.get('/api/admin/transactions', (req, res) => {
   });
 });
 
-// Get total ROI stats for homepage
 app.get('/api/stats/total-roi', (req, res) => {
   db.get('SELECT SUM(roi_earned) as total_roi FROM investors', [], (err, result) => {
     if (err) return res.json({ total_roi: 0 });
@@ -355,7 +335,6 @@ app.get('/api/stats/total-roi', (req, res) => {
   });
 });
 
-// Update central wallet
 app.post('/api/admin/update-wallet', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { wallet_address } = req.body;
@@ -363,7 +342,6 @@ app.post('/api/admin/update-wallet', (req, res) => {
   res.json({ success: true, wallet: centralWallet });
 });
 
-// Delete investor
 app.post('/api/admin/delete-investor', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { investor_code } = req.body;
