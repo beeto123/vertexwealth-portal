@@ -365,6 +365,19 @@ app.post('/api/admin/update-wallet', (req, res) => {
   res.json({ success: true, wallet: centralWallet });
 });
 
+// Delete investor
+app.post('/api/admin/delete-investor', (req, res) => {
+  if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
+  const { investor_code } = req.body;
+  
+  db.run('DELETE FROM transactions WHERE investor_code = ?', [investor_code]);
+  db.run('DELETE FROM roi_updates WHERE investor_code = ?', [investor_code]);
+  db.run('DELETE FROM investors WHERE unique_code = ?', [investor_code], (err) => {
+    if (err) return res.json({ success: false, error: err.message });
+    res.json({ success: true });
+  });
+});
+
 app.get('/api/central-wallet', (req, res) => {
   res.json({ wallet: centralWallet });
 });

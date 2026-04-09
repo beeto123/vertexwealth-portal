@@ -5,6 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel | Vertex Wealth Group</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Toast notification styles */
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #0a2b3e;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+      border-left: 4px solid #b8860b;
+    }
+    .toast-notification.success { border-left-color: #1e7e34; }
+    .toast-notification.error { border-left-color: #c0392b; }
+    .toast-notification.info { border-left-color: #b8860b; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .delete-btn {
+      background: #c0392b;
+      color: white;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      width: auto;
+      margin: 0;
+    }
+    .delete-btn:hover {
+      background: #a93226;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -25,6 +76,14 @@
   </div>
 
   <script>
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast-notification ${type}`;
+      toast.innerHTML = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
     async function checkAdmin() {
       const res = await fetch('/api/admin/check');
       const data = await res.json();
@@ -36,20 +95,16 @@
     }
 
     async function loadAdminPanel() {
-      // Load investors first
       const investorsRes = await fetch('/api/admin/investors');
       const investors = await investorsRes.json();
       
-      // Load withdrawals
       const withdrawalsRes = await fetch('/api/admin/withdrawals');
       const withdrawals = await withdrawalsRes.json();
       
-      // Load central wallet
       const walletRes = await fetch('/api/central-wallet');
       const walletData = await walletRes.json();
       
       const html = `
-        <!-- Generate Investor -->
         <div class="admin-section">
           <h3>➕ Generate New Investor</h3>
           <div class="form-grid">
@@ -61,7 +116,6 @@
           <div id="genResult"></div>
         </div>
 
-        <!-- Add Deposit -->
         <div class="admin-section">
           <h3>💰 Add Deposit</h3>
           <div class="form-grid">
@@ -75,7 +129,6 @@
           <div id="depositResult"></div>
         </div>
 
-        <!-- Add ROI -->
         <div class="admin-section">
           <h3>📈 Add ROI (Profit)</h3>
           <div class="form-grid">
@@ -89,37 +142,37 @@
           <div id="roiResult"></div>
         </div>
 
-        <!-- Pending Withdrawals -->
         <div class="admin-section">
           <h3>⏳ Pending Withdrawals</h3>
           <div id="withdrawalsList">
             ${withdrawals.length === 0 ? '<p>No pending withdrawals.</p>' : `
-              <table>
-                <thead><tr><th>Investor</th><th>Amount</th><th>Wallet</th><th>Actions</th></tr></thead>
-                <tbody>
-                  ${withdrawals.map(w => `
-                    <tr>
-                      <td>${w.investor_name}</td>
-                      <td>$${w.amount}</td>
-                      <td style="word-break:break-all;">${w.wallet_address}</td>
-                      <td>
-                        <button class="success" style="width:auto; margin-right:5px;" onclick="approveWithdrawal(${w.id}, '${w.investor_code}', ${w.amount}, '${w.investor_email}', '${w.investor_name}')">Approve</button>
-                        <button class="danger" style="width:auto;" onclick="rejectWithdrawal(${w.id}, '${w.investor_email}', '${w.investor_name}', ${w.amount})">Reject</button>
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>Investor</th><th>Amount</th><th>Wallet</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    ${withdrawals.map(w => `
+                      <tr>
+                        <td>${w.investor_name}</td>
+                        <td>$${w.amount}</td>
+                        <td style="word-break:break-all;">${w.wallet_address}</td>
+                        <td>
+                          <button class="success" style="width:auto; margin-right:5px;" onclick="approveWithdrawal(${w.id}, '${w.investor_code}', ${w.amount}, '${w.investor_email}', '${w.investor_name}')">Approve</button>
+                          <button class="danger" style="width:auto;" onclick="rejectWithdrawal(${w.id}, '${w.investor_email}', '${w.investor_name}', ${w.amount})">Reject</button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
             `}
           </div>
         </div>
 
-        <!-- All Investors -->
         <div class="admin-section">
           <h3>👥 All Investors</h3>
           <div class="table-wrapper">
             <table>
-              <thead><tr><th>Name</th><th>Code</th><th>Email</th><th>Balance</th><th>ROI</th></tr></thead>
+              <thead><tr><th>Name</th><th>Code</th><th>Email</th><th>Balance</th><th>ROI</th><th>Action</th></tr></thead>
               <tbody>
                 ${investors.map(i => `
                   <tr>
@@ -128,6 +181,7 @@
                     <td>${i.email}</td>
                     <td>$${i.balance}</td>
                     <td>$${i.roi_earned}</td>
+                    <td><button class="delete-btn" onclick="deleteInvestor('${i.unique_code}', '${i.name}')">Delete</button></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -135,7 +189,6 @@
           </div>
         </div>
 
-        <!-- Settings -->
         <div class="admin-section">
           <h3>⚙️ Settings</h3>
           <p>Central USDT Wallet Address:</p>
@@ -149,7 +202,6 @@
       
       document.getElementById('adminContent').innerHTML = html;
       
-      // Attach event listeners
       document.getElementById('generateBtn')?.addEventListener('click', generateInvestor);
       document.getElementById('addDepositBtn')?.addEventListener('click', addDeposit);
       document.getElementById('addRoiBtn')?.addEventListener('click', addRoi);
@@ -157,38 +209,75 @@
     }
 
     async function generateInvestor() {
-      const name = document.getElementById('newName').value;
-      const email = document.getElementById('newEmail').value;
+      const name = document.getElementById('newName').value.trim();
+      const email = document.getElementById('newEmail').value.trim();
       const deposit = document.getElementById('newDeposit').value;
+      const btn = document.getElementById('generateBtn');
       
       if (!name || !email) {
-        alert('Name and email required');
+        showToast('❌ Name and email required', 'error');
         return;
       }
       
-      const res = await fetch('/api/generate-code', {
+      // Disable button and show loading
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span> Sending...';
+      
+      try {
+        const res = await fetch('/api/generate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, initial_deposit: deposit })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast(`✅ Investor "${name}" added! Code: ${data.code} ${data.emailSent ? '📧 Email sent' : '⚠️ Email failed - code: ' + data.code}`, 'success');
+          document.getElementById('newName').value = '';
+          document.getElementById('newEmail').value = '';
+          document.getElementById('newDeposit').value = '0';
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showToast(`❌ Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast('❌ Network error. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Generate Code & Email Investor';
+      }
+    }
+
+    async function deleteInvestor(code, name) {
+      if (!confirm(`Delete investor "${name}"? This cannot be undone.`)) return;
+      
+      const res = await fetch('/api/admin/delete-investor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, initial_deposit: deposit })
+        body: JSON.stringify({ investor_code: code })
       });
       
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('genResult').innerHTML = `<div class="success">✅ Code ${data.code} sent to ${email}</div>`;
-        setTimeout(() => location.reload(), 1500);
+      if (res.ok) {
+        showToast(`🗑️ Investor "${name}" deleted`, 'info');
+        location.reload();
       } else {
-        document.getElementById('genResult').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+        showToast('❌ Delete failed', 'error');
       }
     }
 
     async function addDeposit() {
       const [code, name, email] = document.getElementById('depositInvestor').value.split('|');
       const amount = document.getElementById('depositAmount').value;
+      const btn = document.getElementById('addDepositBtn');
       
       if (!code || !amount) {
-        alert('Select investor and enter amount');
+        showToast('❌ Select investor and enter amount', 'error');
         return;
       }
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span> Adding...';
       
       await fetch('/api/admin/add-deposit', {
         method: 'POST',
@@ -196,18 +285,22 @@
         body: JSON.stringify({ investor_code: code, investor_name: name, amount, investor_email: email })
       });
       
-      document.getElementById('depositResult').innerHTML = '<div class="success">✅ Deposit added</div>';
+      showToast(`✅ Added $${amount} to ${name}`, 'success');
       setTimeout(() => location.reload(), 1000);
     }
 
     async function addRoi() {
       const [code, name, email] = document.getElementById('roiInvestor').value.split('|');
       const amount = document.getElementById('roiAmount').value;
+      const btn = document.getElementById('addRoiBtn');
       
       if (!code || !amount) {
-        alert('Select investor and enter amount');
+        showToast('❌ Select investor and enter amount', 'error');
         return;
       }
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span> Adding...';
       
       await fetch('/api/admin/add-roi', {
         method: 'POST',
@@ -215,7 +308,7 @@
         body: JSON.stringify({ investor_code: code, investor_name: name, amount, investor_email: email, plan_type: 'manual' })
       });
       
-      document.getElementById('roiResult').innerHTML = '<div class="success">✅ ROI added</div>';
+      showToast(`✅ Added $${amount} ROI to ${name}`, 'success');
       setTimeout(() => location.reload(), 1000);
     }
 
@@ -226,17 +319,19 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transaction_id: id, investor_code: code, amount, investor_email: email, investor_name: name })
       });
+      showToast(`✅ Approved $${amount} withdrawal`, 'success');
       location.reload();
     };
 
     window.rejectWithdrawal = async (id, email, name, amount) => {
-      const reason = prompt('Reason for rejection:');
+      const reason = prompt('Reason for rejection (investor will see this):');
       if (!reason) return;
       await fetch('/api/admin/reject-withdrawal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transaction_id: id, reason, investor_email: email, investor_name: name, amount })
       });
+      showToast(`❌ Withdrawal rejected`, 'error');
       location.reload();
     };
 
@@ -247,7 +342,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet_address: wallet })
       });
-      document.getElementById('walletResult').innerHTML = '<div class="success">✅ Wallet updated</div>';
+      showToast(`✅ Wallet address updated`, 'success');
     }
 
     document.getElementById('logoutBtn')?.addEventListener('click', async () => {
