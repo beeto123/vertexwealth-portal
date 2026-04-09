@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Vertex Wealth Group | Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="logo">Vertex Wealth Group</div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/contact.html">Contact</a>
+        <button id="logoutBtn" style="background:#c0392b; color:white; padding:8px 15px; width:auto;">Logout</button>
+      </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 350px;"></div>
+
+    <div id="dashboardContent">
+      <div class="loading">Loading your dashboard...</div>
+    </div>
+
+    <div class="footer">
+      <p>Vertex Wealth Group | Licensed Money Service Business</p>
+    </div>
+  </div>
+
+  <script>
+    let investorData = null;
+    let balanceChart = null;
+    let lastBalance = 0;
+    let refreshInterval = null;
+
+    // Show notification
+    function showNotification(title, message, type = 'success') {
+      const container = document.getElementById('notificationContainer');
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong style="color: #b8860b;">${title}</strong>
+          <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #888; cursor: pointer; width: auto; padding: 0;">✕</button>
+        </div>
+        <div>${message}</div>
+      `;
+      container.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+    }
+
+    // Show loading overlay
+    function showLoading() {
+      const container = document.getElementById('dashboardContent');
+      container.innerHTML = '<div class="loading">Updating...</div>';
+    }
+
+    async function loadDashboard() {
+      const res = await fetch('/api/dashboard');
+      const data = await res.json();
+      
+      if (!data.success) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // Check if balance changed
+      if (lastBalance !== 0 && data.investor.balance !== lastBalance) {
+        const change = data.investor.balance - lastBalance;
+        if (change > 0) {
+          showNotification('Balance Updated', `+$${change.toFixed(2)} added to your account`, 'success');
+        }
+      }
+      lastBalance = data.investor.balance;
+      investorData = data.investor;
+      
+      const html = `
+        <div class="card">
+          <h2>Welcome, ${investorData.name}</h2>
+        </div>
+
+        <div class="balance-row">
+          <div class="balance-card">
+            <div class="label">Current Balance</div>
+            <div class="value" id="currentBalance">$${investorData.balance.toFixed(2)}</div>
+          </div>
+          <div class="balance-card">
+            <div class="label">Total ROI Earned</div>
+            <div class="value">$${investorData.roi_earned.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <!-- Investment Plan Section -->
+        <div class="card">
+          <h3>📈 Active Investment Plan</h3>
+          ${investorData.active_plan !== 'none' ? `
+            <p><strong>Current Plan:</strong> ${investorData.active_plan === 'daily' ? '5% Daily ROI (30 days)' : '35% Weekly ROI (30 days)'}</p>
+            <p><strong>Start Date:</strong> ${new Date(investorData.plan_start_date).toLocaleDateString()}</p>
+            <p><strong>End Date:</strong> ${new Date(investorData.plan_end_date).toLocaleDateString()}</p>
+          ` : `
+            <p>Choose an investment plan to start earning daily/weekly returns:</p>
+            <div class="plan-grid">
+              <div class="plan-card" onclick="selectPlan('daily')">
+                <div class="plan-name">🔥 5% Daily Plan</div>
+                <div class="plan-roi">5% ROI every day</div>
+                <div class="plan-duration">30 days duration</div>
+                <div class="plan-total">~150% total return</div>
+              </div>
+              <div class="plan-card" onclick="selectPlan('weekly')">
+                <div class="plan-name">⭐ 35% Weekly Plan</div>
+                <div class="plan-roi">35% ROI every week</div>
+                <div class="plan-duration">30 days duration</div>
+                <div class="plan-total">~140% total return</div>
+              </div>
+            </div>
+            <div id="planResult"></div>
+          `}
+        </div>
+
+        <!-- Performance Chart -->
+        <div class="card">
+          <h3>📊 Balance Growth Chart</h3>
+          <canvas id="balanceChart" style="max-height: 300px; width: 100%;"></canvas>
+        </div>
+
+        <!-- Deposit Section -->
+        <div class="card">
+          <h3>📥 Deposit USDT</h3>
+          <p>Send USDT (TRC20/BEP20) to the wallet address below:</p>
+          <div class="wallet-box">
+            <span id="walletAddress">${data.centralWallet}</span>
+            <button class="copy-btn" onclick="copyWallet()">Copy</button>
+          </div>
+          <p style="font-size:0.8rem; color:#4a627a; margin-top:10px;">⚠️ After sending, contact admin to confirm your deposit.</p>
+        </div>
+
+        <!-- Withdraw Section -->
+        <div class="card">
+          <h3>💰 Withdraw Funds</h3>
+          <p>Enter your USDT wallet address and amount to withdraw:</p>
+          <input type="text" id="withdrawWallet" placeholder="Your USDT Wallet Address (TRC20/BEP20)">
+          <input type="number" id="withdrawAmount" placeholder="Amount in USD" step="0.01">
+          <button id="withdrawBtn">Request Withdrawal</button>
+          <div id="withdrawMsg"></div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="card">
+          <h3>📜 Transaction History</h3>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                ${data.transactions.length === 0 ? '<tr><td colspan="5">No transactions yet</td></tr>' : 
+                  data.transactions.map(tx => `
+                    <tr>
+                      <td>${new Date(tx.created_at).toLocaleDateString()}</td>
+                      <td>${tx.type.toUpperCase()}</td>
+                      <td>$${tx.amount.toFixed(2)}</td>
+                      <td><span class="status-${tx.status}">${tx.status}</span></td>
+                      <td>${tx.rejection_reason || '-'}</td>
+                    </tr>
+                  `).join('')
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('dashboardContent').innerHTML = html;
+      
+      // Load chart
+      loadChart();
+      
+      // Attach withdraw event listener
+      document.getElementById('withdrawBtn')?.addEventListener('click', requestWithdrawal);
+    }
+
+    async function selectPlan(plan) {
+      if (!confirm(`Select ${plan === 'daily' ? '5% Daily ROI' : '35% Weekly ROI'} plan? ROI will be automatically added daily/weekly.`)) return;
+      
+      const res = await fetch('/api/investor/select-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        showNotification('Plan Activated', `You are now on the ${plan === 'daily' ? '5% Daily' : '35% Weekly'} plan!`, 'success');
+        loadDashboard();
+      } else {
+        document.getElementById('planResult').innerHTML = `<div class="error">${data.error}</div>`;
+      }
+    }
+
+    async function loadChart() {
+      const res = await fetch('/api/investor/chart-data');
+      const data = await res.json();
+      
+      if (!data.success || !data.data.length) return;
+      
+      const ctx = document.getElementById('balanceChart').getContext('2d');
+      if (balanceChart) balanceChart.destroy();
+      
+      balanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.data.map(d => d.date),
+          datasets: [{
+            label: 'Balance ($)',
+            data: data.data.map(d => d.balance),
+            borderColor: '#b8860b',
+            backgroundColor: 'rgba(184, 134, 11, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: '#0a2b3e',
+            pointBorderColor: '#b8860b',
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#e2e8f0' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    async function requestWithdrawal() {
+      const wallet = document.getElementById('withdrawWallet').value.trim();
+      const amount = document.getElementById('withdrawAmount').value;
+      const msgDiv = document.getElementById('withdrawMsg');
+      
+      if (!wallet) {
+        msgDiv.innerHTML = '<div class="error">Please enter your USDT wallet address</div>';
+        return;
+      }
+      
+      if (!amount || amount <= 0) {
+        msgDiv.innerHTML = '<div class="error">Please enter a valid amount</div>';
+        return;
+      }
+      
+      if (parseFloat(amount) > investorData.balance) {
+        msgDiv.innerHTML = '<div class="error">Insufficient balance</div>';
+        return;
+      }
+      
+      const confirmMsg = confirm(`Request withdrawal of $${amount} to:\n${wallet}\n\nType "YES" to confirm.`);
+      if (confirmMsg !== true) return;
+      
+      msgDiv.innerHTML = '<div class="loading">Submitting request...</div>';
+      
+      const res = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, wallet_address: wallet })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        msgDiv.innerHTML = '<div class="success">✓ Withdrawal request submitted. Admin will process it.</div>';
+        document.getElementById('withdrawWallet').value = '';
+        document.getElementById('withdrawAmount').value = '';
+        setTimeout(() => loadDashboard(), 1500);
+      } else {
+        msgDiv.innerHTML = `<div class="error">${data.error}</div>`;
+      }
+    }
+
+    function copyWallet() {
+      const walletText = document.getElementById('walletAddress')?.innerText;
+      if (walletText) {
+        navigator.clipboard.writeText(walletText);
+        showNotification('Copied!', 'Wallet address copied to clipboard', 'info');
+      }
+    }
+
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/login.html';
+    });
+
+    // Auto-refresh dashboard every 10 seconds
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+      loadDashboard();
+    }, 10000);
+
+    loadDashboard();
+  </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Vertex Wealth Group | Investor Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="logo">Vertex Wealth Group</div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/login.html">Investor Login</a>
+      </div>
+    </div>
+
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+      <h2 style="text-align: center;">Investor Login</h2>
+      <p style="text-align: center; margin-bottom: 20px;">Enter your 8-digit unique code</p>
+
+      <input type="text" id="loginCode" placeholder="8-digit code" maxlength="8" autocomplete="off">
+      <button id="loginBtn">Access Dashboard</button>
+      <div id="loginError" class="error" style="text-align: center;"></div>
+    </div>
+
+    <div class="footer">
+      <p>Vertex Wealth Group | Licensed Money Service Business</p>
+      <p>For existing investors only. This is not a public offering.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const code = document.getElementById('loginCode').value.trim();
+      const errorDiv = document.getElementById('loginError');
+      
+      if (!code) {
+        errorDiv.innerText = 'Please enter your code';
+        return;
+      }
+      
+      if (code.length !== 8) {
+        errorDiv.innerText = 'Code must be 8 digits';
+        return;
+      }
+
+      errorDiv.innerText = 'Logging in...';
+      
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        window.location.href = '/dashboard.html';
+      } else {
+        errorDiv.innerText = data.error || 'Invalid login code';
+      }
+    });
+
+    // Allow Enter key to submit
+    document.getElementById('loginCode').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('loginBtn').click();
+      }
+    });
+  </script>
+</body>
+</html>

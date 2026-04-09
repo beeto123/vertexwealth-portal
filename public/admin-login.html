@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Admin Login | Vertex Wealth Group</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="logo">Vertex Wealth Group - Admin</div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+      </div>
+    </div>
+
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+      <h2 style="text-align: center;">Admin Access Only</h2>
+      <p style="text-align: center; margin-bottom: 20px;">Enter administrator password</p>
+
+      <input type="password" id="adminPassword" placeholder="Password">
+      <button id="adminLoginBtn">Login to Admin Panel</button>
+      <div id="loginError" class="error" style="text-align: center;"></div>
+    </div>
+
+    <div class="footer">
+      <p>Vertex Wealth Group | Restricted Access</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('adminLoginBtn').addEventListener('click', async () => {
+      const password = document.getElementById('adminPassword').value;
+      const errorDiv = document.getElementById('loginError');
+      
+      if (!password) {
+        errorDiv.innerText = 'Please enter password';
+        return;
+      }
+
+      errorDiv.innerText = 'Verifying...';
+      
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        window.location.href = '/admin.html';
+      } else {
+        errorDiv.innerText = 'Wrong password';
+      }
+    });
+
+    // Allow Enter key
+    document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('adminLoginBtn').click();
+      }
+    });
+  </script>
+</body>
+</html>

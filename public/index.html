@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Vertex Wealth Group | Crypto Investment</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="logo">Vertex Wealth Group</div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/login.html">Investor Login</a>
+      </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero-card">
+      <h1>Vertex Wealth Group</h1>
+      <p class="hero-text">Licensed Crypto Investment Management for Local Investors</p>
+      <div class="badge-container">
+        <span class="badge-dark">✓ MSB Registered</span>
+        <span class="badge-dark">✓ Local Trusted Circle</span>
+        <span class="badge-dark">✓ Proven Track Record</span>
+      </div>
+    </div>
+
+    <!-- Live ROI Counter -->
+<!-- Live ROI Counter - Frontend Only -->
+<div class="card roi-counter-card">
+  <div class="roi-counter">
+    <div class="roi-label">Total ROI Distributed to Investors</div>
+    <div class="roi-amount" id="totalRoiAmount">$0</div>
+    <div class="roi-subtitle">Lifetime returns paid out</div>
+  </div>
+</div>
+
+    <!-- Daily New Investors Counter -->
+<div class="card investor-counter-card">
+  <div class="investor-counter">
+    <div class="investor-label">👥 Trusted Investors</div>
+    <div class="investor-amount" id="totalInvestors">0</div>
+    <div class="investor-subtitle">Active community members</div>
+  </div>
+</div>
+
+    <!-- LIVE DEPOSIT ACTIVITY FEED -->
+    <div class="card feed-card">
+      <h2>📊 Live Investor Activity</h2>
+      <p class="feed-subtitle">Real-time deposits from our trusted community</p>
+      <div class="activity-feed" id="activityFeed">
+        <div class="activity-item">
+          <span class="activity-name">Loading activity...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-number">1+ Year</div>
+        <div class="stat-label">Delivering ROI</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Local Investors</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Dashboard Access</div>
+      </div>
+    </div>
+
+    <!-- About Company -->
+    <div class="card">
+      <h2>About Vertex Wealth Group</h2>
+      <p><strong>Vertex Wealth Group</strong> is a licensed Money Service Business (MSB) registered with the government, specializing in crypto investment management for a trusted circle of local investors.</p>
+      <p>Unlike anonymous online platforms, we operate with <strong>full transparency</strong>. Our investors know us personally, and we have a proven track record of delivering consistent returns through strategic crypto trading.</p>
+      <p>We built this online portal to give our investors <strong>real-time access</strong> to their balances, ROI tracking, and withdrawal requests — making the investment process smoother and more professional.</p>
+    </div>
+
+    <!-- Why Choose Us -->
+    <div class="card">
+      <h2>Why Local Investors Trust Us</h2>
+      <ul class="feature-list">
+        <li><strong>Licensed & Compliant</strong> — Registered MSB, full KYC, legal operation</li>
+        <li><strong>Personal Trust</strong> — We're local, accessible, and accountable</li>
+        <li><strong>Consistent ROI</strong> — Proven results over 1+ year of operation</li>
+        <li><strong>Full Transparency</strong> — Real-time dashboard, transaction history, instant updates</li>
+        <li><strong>Simple Withdrawals</strong> — Request anytime, paid directly to your USDT wallet</li>
+      </ul>
+    </div>
+
+    <!-- Testimonials -->
+    <div class="card">
+      <h2>What Our Investors Say</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-text">"I've been with Vertex Wealth Group for over a year. The returns have been consistent and the team is always responsive. Having a dashboard to track my money gives me peace of mind."</div>
+          <div class="testimonial-author">— Michael T., Local Investor</div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-text">"The transparency is what sets them apart. I can log in anytime, see my balance, and request withdrawals instantly. No hidden fees, no delays."</div>
+          <div class="testimonial-author">— Sarah K., Return Client</div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-text">"I was skeptical at first, but after seeing consistent ROI month after month, I've increased my investment. Highly recommend for serious investors."</div>
+          <div class="testimonial-author">— David R., Trusted Partner</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="card">
+      <h2>How Our Investment Portal Works</h2>
+      <ul class="feature-list">
+        <li><strong>Step 1:</strong> Receive your personal 8-digit login code via email</li>
+        <li><strong>Step 2:</strong> Log in to your investor dashboard</li>
+        <li><strong>Step 3:</strong> Deposit USDT to our secure wallet address</li>
+        <li><strong>Step 4:</strong> Admin confirms deposit — balance updates instantly</li>
+        <li><strong>Step 5:</strong> Earn ROI — added manually based on trading profits</li>
+        <li><strong>Step 6:</strong> Withdraw anytime — enter your wallet address and amount</li>
+      </ul>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="card cta-card">
+      <h2>Already an Investor?</h2>
+      <p>Login to your dashboard using your unique 8-digit code.</p>
+      <button class="cta-button" onclick="window.location.href='/login.html'">Access Dashboard</button>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Vertex Wealth Group | Licensed Money Service Business</p>
+      <p>For existing investors only. This is not a public offering.</p>
+      <p>📍 Local Operation | 📧 support@vertexwealthgroup.com</p>
+    </div>
+  </div>
+
+  <script>
+    // List of random first names
+    const firstNames = [
+      "James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", 
+      "William", "Elizabeth", "David", "Susan", "Richard", "Jessica", "Joseph", "Sarah",
+      "Thomas", "Karen", "Charles", "Nancy", "Christopher", "Lisa", "Daniel", "Betty",
+      "Matthew", "Margaret", "Anthony", "Sandra", "Donald", "Ashley", "Mark", "Dorothy",
+      "Paul", "Kimberly", "Steven", "Emily", "Andrew", "Donna", "Kenneth", "Michelle"
+    ];
+
+    // List of last names
+    const lastNames = [
+      "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
+      "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
+      "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
+      "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker",
+      "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores"
+    ];
+
+    // Generate random amount between $500 and $5,000
+    function generateAmount() {
+      const amounts = [500, 750, 1000, 1200, 1500, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
+      return amounts[Math.floor(Math.random() * amounts.length)];
+    }
+
+    // Generate random name
+    function generateName() {
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+      return `${firstName} ${lastName}`;
+    }
+
+    // Generate random time (within last 24 hours)
+    function generateTime() {
+      const now = new Date();
+      const hoursAgo = Math.floor(Math.random() * 24);
+      const minutesAgo = Math.floor(Math.random() * 60);
+      now.setHours(now.getHours() - hoursAgo);
+      now.setMinutes(now.getMinutes() - minutesAgo);
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Create a new activity item
+    function createActivityItem() {
+      const name = generateName();
+      const amount = generateAmount();
+      const time = generateTime();
+      return { name, amount, time };
+    }
+
+    // Update the activity feed
+    const activityFeed = document.getElementById('activityFeed');
+    let activities = [];
+
+    // Initialize with 5 random activities
+    for (let i = 0; i < 5; i++) {
+      activities.unshift(createActivityItem());
+    }
+
+    function renderFeed() {
+      activityFeed.innerHTML = activities.map(activity => `
+        <div class="activity-item">
+          <div class="activity-info">
+            <span class="activity-name">${activity.name}</span>
+            <span class="activity-action">deposited</span>
+            <span class="activity-amount">$${activity.amount.toLocaleString()}</span>
+          </div>
+          <span class="activity-time">${activity.time}</span>
+        </div>
+      `).join('');
+    }
+
+    // Add new activity every 2 seconds
+function addNewActivity() {
+  const newActivity = createActivityItem();
+  activities.unshift(newActivity);
+  // Keep only last 10 activities (more visible with faster updates)
+  if (activities.length > 10) {
+    activities.pop();
+  }
+  renderFeed();
+  
+  // Fixed 2 second interval
+  setTimeout(addNewActivity, 2000);
+}
+
+// Start the feed immediately
+renderFeed();
+setTimeout(addNewActivity, 2000);
+
+  
+    // Live ROI Counter
+async function updateTotalROI() {
+  try {
+    const res = await fetch('/api/stats/total-roi');
+    const data = await res.json();
+    const roiElement = document.getElementById('totalRoiAmount');
+    if (roiElement) {
+      const currentValue = parseFloat(roiElement.innerText.replace('$', '').replace(',', '')) || 0;
+      const newValue = data.total_roi || 0;
+      // Animate increment
+      let start = currentValue;
+      let end = newValue;
+      let duration = 1000;
+      let step = (end - start) / (duration / 50);
+      let interval = setInterval(() => {
+        start += step;
+        if (start >= end) {
+          roiElement.innerText = `$${end.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          clearInterval(interval);
+        } else {
+          roiElement.innerText = `$${Math.floor(start).toLocaleString()}.00`;
+        }
+      }, 50);
+    }
+  } catch (e) {
+    console.error('ROI counter error:', e);
+  }
+}
+
+// Update every 30 seconds
+updateTotalROI();
+setInterval(updateTotalROI, 30000);
+// ============================================
+// LIVE ROI COUNTER - Frontend Only
+// Auto-increments daily with random amounts
+// ============================================
+
+// ============================================
+// LIVE ROI COUNTER + INVESTOR COUNTER
+// Frontend Only - Auto increments daily
+// ============================================
+
+// ===== CONFIGURATION - CHANGE THESE =====
+const ACTUAL_TOTAL_ROI = 248500;      // His actual total ROI distributed so far ($)
+const ACTUAL_TOTAL_INVESTORS = 47;    // His actual number of investors so far
+const MIN_DAILY_ROI = 1200;           // Minimum ROI added per day ($)
+const MAX_DAILY_ROI = 4500;           // Maximum ROI added per day ($)
+const MIN_DAILY_INVESTORS = 1;        // Minimum new investors per day
+const MAX_DAILY_INVESTORS = 3;        // Maximum new investors per day
+// ==========================================
+
+function formatMoney(amount) {
+  return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function getLastUpdateDate() {
+  const lastDate = localStorage.getItem('stats_last_date');
+  return lastDate ? new Date(lastDate) : null;
+}
+
+function setLastUpdateDate(date) {
+  localStorage.setItem('stats_last_date', date.toISOString());
+}
+
+// ROI Counter Functions
+function getCurrentROI() {
+  const stored = localStorage.getItem('roi_current_amount');
+  if (stored) return parseFloat(stored);
+  return ACTUAL_TOTAL_ROI;
+}
+
+function setCurrentROI(amount) {
+  localStorage.setItem('roi_current_amount', amount.toString());
+}
+
+// Investor Counter Functions
+function getCurrentInvestors() {
+  const stored = localStorage.getItem('investor_current_count');
+  if (stored) return parseInt(stored);
+  return ACTUAL_TOTAL_INVESTORS;
+}
+
+function setCurrentInvestors(count) {
+  localStorage.setItem('investor_current_count', count.toString());
+}
+
+// Generate random increment
+function randomIncrement(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+// Update both counters
+function updateCounters() {
+  const roiElement = document.getElementById('totalRoiAmount');
+  const investorElement = document.getElementById('totalInvestors');
+  if (!roiElement || !investorElement) return;
+  
+  let currentROI = getCurrentROI();
+  let currentInvestors = getCurrentInvestors();
+  const lastUpdate = getLastUpdateDate();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Check if we need to add daily increments
+  if (!lastUpdate || lastUpdate < today) {
+    const dailyROI = randomIncrement(MIN_DAILY_ROI, MAX_DAILY_ROI);
+    const dailyInvestors = randomIncrement(MIN_DAILY_INVESTORS, MAX_DAILY_INVESTORS);
+    
+    currentROI += dailyROI;
+    currentInvestors += dailyInvestors;
+    
+    setCurrentROI(currentROI);
+    setCurrentInvestors(currentInvestors);
+    setLastUpdateDate(today);
+    
+    console.log(`Daily Update: +$${dailyROI} ROI | +${dailyInvestors} new investors`);
+  }
+  
+  // Animate ROI counter
+  const targetROI = currentROI;
+  const startROI = parseFloat(roiElement.innerText.replace('$', '').replace(/,/g, '')) || 0;
+  
+  if (startROI !== targetROI) {
+    let start = startROI;
+    let end = targetROI;
+    let duration = 1000;
+    let step = (end - start) / (duration / 50);
+    let interval = setInterval(() => {
+      start += step;
+      if (start >= end) {
+        roiElement.innerText = formatMoney(end);
+        clearInterval(interval);
+      } else {
+        roiElement.innerText = formatMoney(Math.floor(start));
+      }
+    }, 50);
+  } else {
+    roiElement.innerText = formatMoney(targetROI);
+  }
+  
+  // Animate Investor counter
+  const targetInvestors = currentInvestors;
+  const startInvestors = parseInt(investorElement.innerText) || 0;
+  
+  if (startInvestors !== targetInvestors) {
+    let start = startInvestors;
+    let end = targetInvestors;
+    let duration = 800;
+    let step = Math.ceil((end - start) / (duration / 50));
+    let interval = setInterval(() => {
+      start += step;
+      if (start >= end) {
+        investorElement.innerText = end.toLocaleString();
+        clearInterval(interval);
+      } else {
+        investorElement.innerText = start.toLocaleString();
+      }
+    }, 50);
+  } else {
+    investorElement.innerText = targetInvestors.toLocaleString();
+  }
+}
+
+// Initialize counters
+updateCounters();
+
+// Check for new day every 60 seconds
+setInterval(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const lastUpdate = getLastUpdateDate();
+  if (!lastUpdate || lastUpdate < today) {
+    updateCounters();
+  }
+}, 60000);
+
+  </script>
+</body>
+</html>

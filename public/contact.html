@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Vertex Wealth Group | Contact</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="logo">Vertex Wealth Group</div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/login.html">Investor Login</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Contact Vertex Wealth Group</h2>
+      <p style="margin-bottom: 20px;">For existing investors, please include your unique code in the message.</p>
+
+      <form id="contactForm">
+        <input type="text" id="name" placeholder="Your Full Name" required>
+        <input type="email" id="email" placeholder="Your Email Address" required>
+        <input type="text" id="code" placeholder="Your 8-digit Code (if investor)">
+        <textarea id="message" placeholder="Your Message" rows="5" required></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+      <div id="contactResponse"></div>
+    </div>
+
+    <div class="card" style="text-align: center;">
+      <h3>Direct Contact</h3>
+      <p>Email: support@vertexwealthgroup.com</p>
+      <p>Response within 24 hours</p>
+    </div>
+
+    <div class="footer">
+      <p>Vertex Wealth Group | Licensed Money Service Business</p>
+      <p>For existing investors only. This is not a public offering.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const code = document.getElementById('code').value;
+      const message = document.getElementById('message').value;
+
+      const responseDiv = document.getElementById('contactResponse');
+      responseDiv.innerHTML = '<div class="loading">Sending message...</div>';
+
+      // For now, this is a demo - in production, you'd connect to an email API
+      setTimeout(() => {
+        responseDiv.innerHTML = '<div class="success">✓ Message sent! We will respond within 24 hours.</div>';
+        document.getElementById('contactForm').reset();
+      }, 1000);
+
+      // To actually send email, you would need to add a backend endpoint
+      // For now, admin can just see messages via email client
+    });
+  </script>
+</body>
+</html>
