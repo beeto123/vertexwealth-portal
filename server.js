@@ -19,13 +19,15 @@ app.use(session({
   cookie: { secure: false }
 }));
 
-// Email transporter
+// Email transporter - Gmail with longer timeout
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
-  }
+  },
+  timeout: 60000,
+  socketTimeout: 60000
 });
 
 // Central wallet address
@@ -35,7 +37,7 @@ function generateCode() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-// Send email receipt (background - no await)
+// Send email receipt (background - no waiting)
 function sendEmailReceipt(investorEmail, investorName, type, amount, status, planType = null) {
   let subject = '';
   let message = '';
@@ -81,7 +83,6 @@ app.post('/api/generate-code', (req, res) => {
       if (depositAmount > 0) {
         db.run('INSERT INTO transactions (investor_code, investor_name, type, amount, status) VALUES (?, ?, ?, ?, ?)',
           [code, name, 'deposit', depositAmount, 'approved']);
-        // Send email in background
         sendEmailReceipt(email, name, 'deposit', depositAmount, 'approved');
       }
 
@@ -93,10 +94,10 @@ app.post('/api/generate-code', (req, res) => {
         text: `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://vertexwealth-portal.onrender.com/login.html\n\nKeep this code private.\n\nThank you for investing with Vertex Wealth Group.`
       };
 
-      // Send email in background
+      // Send email in background - no waiting
       transporter.sendMail(mailOptions).catch(error => console.error('Email error:', error));
 
-      // Return immediately - don't wait for email
+      // Return immediately
       res.json({ success: true, code });
     }
   );
@@ -362,7 +363,7 @@ app.post('/api/admin/update-wallet', (req, res) => {
   res.json({ success: true, wallet: centralWallet });
 });
 
-// Delete investor (FIXED)
+// Delete investor
 app.post('/api/admin/delete-investor', (req, res) => {
   if (!req.session.admin) return res.status(401).json({ error: 'Unauthorized' });
   const { investor_code } = req.body;
