@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -17,6 +18,15 @@ app.use(session({
   cookie: { secure: false }
 }));
 
+// Direct Gmail email transporter (Nodemailer)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -30,30 +40,37 @@ function generateCode() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-// Send email using SendGrid
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
+// Send email function (using Nodemailer)
 function sendEmail(to, subject, text) {
-  const msg = { to, from: process.env.EMAIL_USER, subject, text };
-  sgMail.send(msg).catch(error => console.error('SendGrid error:', error?.response?.body || error.message));
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: to,
+    subject: subject,
+    text: text
+  };
+  
+  transporter.sendMail(mailOptions)
+    .then(() => console.log('Email sent to:', to))
+    .catch(error => console.error('Email error:', error.message));
 }
 
 function sendEmailReceipt(investorEmail, investorName, type, amount, status, planType = null) {
   let subject = '', message = '';
+  
   if (type === 'deposit') {
     subject = `Deposit Confirmed - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\nYour deposit of $${amount} has been confirmed and added to your balance.`;
+    message = `Hello ${investorName},\n\nYour deposit of $${amount} has been confirmed and added to your balance.\n\nThank you for investing with Vertex Wealth Group.`;
   } else if (type === 'roi') {
     subject = `ROI Added - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\n${planType ? `${planType} plan` : 'Profit'} of $${amount} added to your balance.`;
+    message = `Hello ${investorName},\n\n${planType ? `${planType} plan` : 'Profit'} of $${amount} added to your balance.\n\nThank you for trusting Vertex Wealth Group.`;
   } else if (type === 'withdraw_approved') {
     subject = `Withdrawal Approved - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been approved and processed.`;
+    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been approved and processed.\n\nFunds have been sent to your USDT wallet.`;
   } else if (type === 'withdraw_rejected') {
     subject = `Withdrawal Update - Vertex Wealth Group`;
-    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been rejected.\n\nReason: ${status}`;
+    message = `Hello ${investorName},\n\nYour withdrawal request of $${amount} has been rejected.\n\nReason: ${status}\n\nPlease contact support.`;
   }
+  
   sendEmail(investorEmail, subject, message);
 }
 
@@ -64,7 +81,6 @@ app.post('/api/generate-code', async (req, res) => {
   const code = generateCode();
   const depositAmount = parseFloat(initial_deposit) || 0;
 
-  // Insert investor
   const { error } = await supabase
     .from('investors')
     .insert([{ unique_code: code, name, email, balance: depositAmount }]);
@@ -79,7 +95,7 @@ app.post('/api/generate-code', async (req, res) => {
     sendEmailReceipt(email, name, 'deposit', depositAmount, 'approved');
   }
 
-  const loginMessage = `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://vertexwealth-portal.onrender.com/login.html`;
+  const loginMessage = `Hello ${name},\n\nYour unique 8-digit login code is: ${code}\n\nLogin here: https://vertexwealth-portal.onrender.com/login.html\n\nKeep this code private.\n\nThank you for investing with Vertex Wealth Group.`;
   sendEmail(email, 'Vertex Wealth Group - Your Login Code', loginMessage);
   res.json({ success: true, code });
 });
@@ -322,6 +338,8 @@ app.get('/api/central-wallet', (req, res) => {
   res.json({ wallet: centralWallet });
 });
 
+// ============ CONTACT FORM (LEAD) ============
+
 app.post('/api/submit-lead', async (req, res) => {
   const { name, email, phone, amount, source, message } = req.body;
   
@@ -331,32 +349,11 @@ app.post('/api/submit-lead', async (req, res) => {
   const emailBody = `New investor application:\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nInvestment Amount: ${amount}\nSource: ${source}\nMessage: ${message || 'No message'}`;
   
   // Send to admin
-  try {
-    await sgMail.send({
-      to: adminEmail,
-      from: process.env.EMAIL_USER,
-      subject: `New Investor Lead: ${name}`,
-      text: emailBody
-    });
-    console.log('Admin email sent to:', adminEmail);
-  } catch (err) {
-    console.error('Admin email error:', err.response?.body || err.message);
-  }
+  sendEmail(adminEmail, `New Investor Lead: ${name}`, emailBody);
   
   // Send confirmation to applicant
   const confirmBody = `Hello ${name},\n\nThank you for your interest in Vertex Wealth Group.\n\nWe have received your application and will review it within 24-48 hours.\n\nThank you,\nVertex Wealth Group`;
-  
-  try {
-    await sgMail.send({
-      to: email,
-      from: process.env.EMAIL_USER,
-      subject: 'Thank you for your application - Vertex Wealth Group',
-      text: confirmBody
-    });
-    console.log('Confirmation email sent to:', email);
-  } catch (err) {
-    console.error('Confirmation email error:', err.response?.body || err.message);
-  }
+  sendEmail(email, 'Thank you for your application - Vertex Wealth Group', confirmBody);
   
   res.json({ success: true });
 });
