@@ -6,7 +6,6 @@
   <title>Admin Panel | Vertex Wealth Group</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* Toast notification styles */
     .toast-notification {
       position: fixed;
       top: 20px;
@@ -22,7 +21,6 @@
     }
     .toast-notification.success { border-left-color: #1e7e34; }
     .toast-notification.error { border-left-color: #c0392b; }
-    .toast-notification.info { border-left-color: #b8860b; }
     @keyframes slideIn {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -219,9 +217,8 @@
         return;
       }
       
-      // Disable button and show loading
       btn.disabled = true;
-      btn.innerHTML = '<span class="loading-spinner"></span> Sending...';
+      btn.innerHTML = '<span class="loading-spinner"></span> Adding investor...';
       
       try {
         const res = await fetch('/api/generate-code', {
@@ -233,7 +230,7 @@
         const data = await res.json();
         
         if (data.success) {
-          showToast(`✅ Investor "${name}" added! Code: ${data.code} ${data.emailSent ? '📧 Email sent' : '⚠️ Email failed - code: ' + data.code}`, 'success');
+          showToast(`✅ Investor "${name}" added! Code: ${data.code}`, 'success');
           document.getElementById('newName').value = '';
           document.getElementById('newEmail').value = '';
           document.getElementById('newDeposit').value = '0';
